@@ -1,8 +1,0 @@
-EdgeOne Pages adapt: Hono + KV, onRequest entry, KV compat layer
-
-- functions/[[default]].ts: EdgeOne entry (onRequest + app.fetch)
-- KV normalize: KV/STORE/KV_STORAGE binding names
-- KV compat: strip expirationTtl (EdgeOne put takes key/value only)
-- tsconfig: types -> @edgeone/ef-types, include functions/
-- package.json: edgeone CLI + dev/deploy scripts
-- Local tests passed: home/login/admin/providers/proxy-keys/models/chat
