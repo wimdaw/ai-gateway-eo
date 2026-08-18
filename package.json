@@ -1,0 +1,26 @@
+{
+  "name": "ai-gateway-eo",
+  "version": "1.0.0",
+  "description": "AI Gateway for EdgeOne Pages (ported from DuoJLa/ai-gateway)",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "edgeone makers dev",
+    "deploy": "edgeone makers deploy . -n ai-gateway-eo",
+    "build": "tsc --noEmit"
+  },
+  "keywords": [
+    "edgeone",
+    "ai",
+    "proxy",
+    "api-gateway"
+  ],
+  "license": "Apache 2.0",
+  "dependencies": {
+    "hono": "^4.12.27"
+  },
+  "devDependencies": {
+    "@edgeone/ef-types": "^1.0.5",
+    "edgeone": "^1.0.21",
+    "typescript": "^6.0.3"
+  }
+}
