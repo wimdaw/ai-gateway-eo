@@ -5,6 +5,26 @@
 
 import app from '../src/index';
 
+// 内存 KV 兜底: 当控制台未绑定 KV namespace 时, 用进程内 Map 模拟,
+// 保证项目能启动运行 (数据不持久, 重启即失)。绑定 KV 后自动用真实 KV。
+function createMemoryKv(): any {
+  const store = new Map<string, string>();
+  return {
+    async get(key: string) {
+      return store.has(key) ? store.get(key)! : null;
+    },
+    async put(key: string, value: string) {
+      store.set(key, value);
+    },
+    async delete(key: string) {
+      store.delete(key);
+    },
+    async list() {
+      return { keys: [...store.keys()].map((k) => ({ key: k })), complete: true };
+    },
+  };
+}
+
 // EdgeOne KV 的 put 签名可能不支持 Cloudflare 的 { expirationTtl } 选项。
 // 这里对 KV 做一层兼容包装:
 //  - put 时剥离 expirationTtl (会话过期已由 getSession 的 expiresAt 逻辑兜底)
@@ -38,22 +58,31 @@ function makeKvCompatible(kv: any): any {
   return patched;
 }
 
+// 解析 KV: 优先真实绑定, 否则内存兜底
+function resolveKv(env: Record<string, any>): any {
+  let kv = env.KV || env.STORE || env.KV_STORAGE;
+  if (kv) {
+    return makeKvCompatible(kv);
+  }
+  console.warn('[ai-gateway] KV binding not found (KV/STORE/KV_STORAGE). Using in-memory fallback.');
+  return createMemoryKv();
+}
+
 export function onRequest(context: {
   request: Request;
   params: Record<string, string>;
   env: Record<string, any>;
 }): Response | Promise<Response> {
   const env = context.env || {};
+  env.KV = resolveKv(env);
 
-  // 归一化 KV binding: 支持 KV / STORE / KV_STORAGE 三种绑定名
-  if (!env.KV) {
-    const kvBinding = env.STORE || env.KV_STORAGE;
-    if (kvBinding) {
-      env.KV = makeKvCompatible(kvBinding);
-    }
-  } else {
-    env.KV = makeKvCompatible(env.KV);
+  try {
+    return app.fetch(context.request, env);
+  } catch (err: any) {
+    console.error('[ai-gateway] unhandled error:', err);
+    return new Response(
+      JSON.stringify({ error: { message: '服务器内部错误: ' + String(err?.message || err), type: 'server_error' } }),
+      { status: 500, headers: { 'content-type': 'application/json' } }
+    );
   }
-
-  return app.fetch(context.request, env);
 }
