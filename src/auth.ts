@@ -44,7 +44,7 @@ export async function adminAuthMiddleware(c: Context<{ Bindings: Env }>, next: N
 export async function handleLogin(c: Context<{ Bindings: Env }>) {
   const { username, password } = await c.req.json()
   const adminUser = c.env.ADMIN_USERNAME || 'admin'
-  const adminPass = c.env.ADMIN_PASSWORD || 'Admin@123456'
+  const adminPass = c.env.ADMIN_PASSWORD || 'yxy.@990524gdg'
 
   if (!adminUser || !adminPass) {
     return c.json({

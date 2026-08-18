@@ -121,21 +121,35 @@ export async function validateProxyKey(env: Env, key: string): Promise<boolean> 
 import { DEFAULT_PROVIDERS, PROXY_KEY_PREFIX } from './config'
 
 export async function seedInitialData(env: Env): Promise<void> {
-  const providers = await getProviders(env)
+  let providers = await getProviders(env)
   const migrationCompleted = await env.KV.get(KV_KEYS.OPENCODE_MIGRATION)
-  const opencode = DEFAULT_PROVIDERS.find((provider) => provider.id === 'opencode')
 
-  if (!migrationCompleted) {
-    if (opencode && !providers.some((provider) => provider.id === opencode.id)) {
-      await setProviders(env, [
-        ...providers,
-        {
-          ...opencode,
-          apiKeys: opencode.apiKeys.map((key) => ({ ...key })),
-          models: opencode.models.map((model) => ({ ...model })),
-        },
-      ])
+  // 遍历所有预设渠道: 缺失的渠道直接补充, 已有渠道则补充缺失的模型
+  let changed = false
+  for (const preset of DEFAULT_PROVIDERS) {
+    const existing = providers.find((p) => p.id === preset.id)
+    if (!existing) {
+      providers.push({
+        ...preset,
+        apiKeys: preset.apiKeys.map((key) => ({ ...key })),
+        models: preset.models.map((model) => ({ ...model })),
+      })
+      changed = true
+    } else {
+      // 已有渠道: 补充缺失模型 (不覆盖用户对模型 enabled 的自定义)
+      const presetIds = new Set(preset.models.map((m) => m.id))
+      const existingIds = new Set(existing.models.map((m) => m.id))
+      const missing = preset.models.filter((m) => !existingIds.has(m.id))
+      if (missing.length > 0) {
+        existing.models = [...existing.models, ...missing.map((m) => ({ ...m }))]
+        changed = true
+      }
     }
+  }
+  if (changed) {
+    await setProviders(env, providers)
+  }
+  if (!migrationCompleted) {
     await env.KV.put(KV_KEYS.OPENCODE_MIGRATION, '1')
   }
 

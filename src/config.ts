@@ -40,21 +40,67 @@ export const EXPIRY_OPTIONS: Record<string, number | null> = {
   'forever': null,
 }
 
+const now = () => new Date().toISOString()
+
 export const DEFAULT_PROVIDERS: Provider[] = [
+  // ===== OpenCode 免费网关 (免 key, 含 CDN 镜像) =====
   {
     id: 'opencode',
-    name: 'OpenCode',
+    name: 'OpenCode (Free)',
     baseUrl: 'https://opencode.ai/zen/v1',
     apiType: 'openai',
     apiKeys: [],
     models: [
+      { id: 'big-pickle', enabled: true },
       { id: 'deepseek-v4-flash-free', enabled: true },
+      { id: 'hy3-free', enabled: true },
+      { id: 'laguna-s-2.1-free', enabled: true },
       { id: 'mimo-v2.5-free', enabled: true },
       { id: 'nemotron-3-ultra-free', enabled: true },
-      { id: 'hy3-free', enabled: true },
+      { id: 'nemotron-3.5-lightning-free', enabled: true },
     ],
     enabled: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  // ===== Kilo Gateway 免费后端 (Kilo Code 官方网关, 免 key) =====
+  {
+    id: 'kilo',
+    name: 'Kilo Gateway (Free)',
+    baseUrl: 'https://api.kilo.ai/api/gateway',
+    apiType: 'openai',
+    apiKeys: [],
+    models: [
+      { id: 'kilo-auto/free', enabled: true },
+      { id: 'cohere/north-mini-code:free', enabled: true },
+      { id: 'dots-studio/dots-3-note-preview:free', enabled: true },
+      { id: 'liquid/lfm-2.5-2.6b:free', enabled: true },
+      { id: 'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free', enabled: true },
+      { id: 'nvidia/nemotron-3-super-120b-a12b:free', enabled: true },
+      { id: 'nvidia/nemotron-3-ultra-550b-a55b:free', enabled: true },
+      { id: 'nvidia/nemotron-3.5-content-safety:free', enabled: true },
+      { id: 'nvidia/nemotron-3.5-lightning:free', enabled: true },
+      { id: 'poolside/laguna-s-2.1:free', enabled: true },
+      { id: 'poolside/laguna-xs-2.1:free', enabled: true },
+      { id: 'stepfun/step-3.7-flash:free', enabled: true },
+      { id: 'tencent/hy3:free', enabled: true },
+    ],
+    enabled: true,
+    createdAt: now(),
+    updatedAt: now(),
+  },
+  // ===== Azure TTS 免费语音 (微软 Edge 在线语音, 免 key) =====
+  {
+    id: 'azure-tts',
+    name: 'Azure TTS (Free)',
+    baseUrl: 'https://speech.platform.bing.com',
+    apiType: 'openai',
+    apiKeys: [],
+    models: [
+      { id: 'azure-tts', enabled: true },
+    ],
+    enabled: true,
+    createdAt: now(),
+    updatedAt: now(),
   },
 ]
