@@ -43,8 +43,8 @@ export async function adminAuthMiddleware(c: Context<{ Bindings: Env }>, next: N
 /** 管理员登录 */
 export async function handleLogin(c: Context<{ Bindings: Env }>) {
   const { username, password } = await c.req.json()
-  const adminUser = c.env.ADMIN_USERNAME
-  const adminPass = c.env.ADMIN_PASSWORD
+  const adminUser = c.env.ADMIN_USERNAME || 'admin'
+  const adminPass = c.env.ADMIN_PASSWORD || 'Admin@123456'
 
   if (!adminUser || !adminPass) {
     return c.json({

@@ -1,0 +1,22 @@
+{
+  "version": 3,
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "^/(.*)$",
+      "server-name": "edge"
+    }
+  ],
+  "middlewarePaths": "^/(.*)$",
+  "conf": {
+    "headers": [],
+    "redirects": [],
+    "caches": [],
+    "buildCommand": "npm run build",
+    "installCommand": "npm install",
+    "outputDirectory": ".",
+    "nodeVersion": "20.18.0"
+  }
+}

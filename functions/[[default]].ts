@@ -1,12 +1,10 @@
 // EdgeOne Pages Functions 默认路由 (catch-all)
-// 把 ai-gateway 的 Hono app 挂载到 EdgeOne 运行时。
-// EdgeOne 入口: export function onRequest(context) => Response
-// context.env 含 KV namespace 绑定(由控制台绑定, 绑定名可配置) 与 vars。
+// 入口: export function onRequest(context) => Response
+// app 与 blob 适配均来自预打包的 bundle (index.js)
 
-import app from '../src/index';
+import { app, createBlobKv } from './index.js';
 
-// 内存 KV 兜底: 当控制台未绑定 KV namespace 时, 用进程内 Map 模拟,
-// 保证项目能启动运行 (数据不持久, 重启即失)。绑定 KV 后自动用真实 KV。
+// 内存 KV 兜底: Blob 与 KV 都不可用时, 用进程内 Map 模拟 (数据不持久)
 function createMemoryKv(): any {
   const store = new Map<string, string>();
   return {
@@ -26,21 +24,15 @@ function createMemoryKv(): any {
 }
 
 // EdgeOne KV 的 put 签名可能不支持 Cloudflare 的 { expirationTtl } 选项。
-// 这里对 KV 做一层兼容包装:
-//  - put 时剥离 expirationTtl (会话过期已由 getSession 的 expiresAt 逻辑兜底)
-//  - get 时剥离 { type } 选项中的未知值, 只传 'text' (默认)
 function makeKvCompatible(kv: any): any {
   if (!kv) return kv;
   if (kv.__eoPatched) return kv;
   const patched = {
     ...kv,
     put(key: string, value: any, options?: any) {
-      // 剥离 expirationTtl: EdgeOne put 只接受 (key, value)
       return kv.put(key, value);
     },
     get(key: string, options?: any) {
-      // EdgeOne get 只接受 { type: 'text'|'json'|'arrayBuffer'|'stream' }
-      // 默认 text; 若上层传了不支持的类型, 回退 text
       try {
         return kv.get(key, options);
       } catch (e) {
@@ -58,13 +50,18 @@ function makeKvCompatible(kv: any): any {
   return patched;
 }
 
-// 解析 KV: 优先真实绑定, 否则内存兜底
+// 解析 KV: 真实 KV 绑定 → Blob 存储(开箱即用) → 内存兜底
 function resolveKv(env: Record<string, any>): any {
-  let kv = env.KV || env.STORE || env.KV_STORAGE;
-  if (kv) {
-    return makeKvCompatible(kv);
+  const realKv = env.KV || env.STORE || env.KV_STORAGE;
+  if (realKv) {
+    return makeKvCompatible(realKv);
   }
-  console.warn('[ai-gateway] KV binding not found (KV/STORE/KV_STORAGE). Using in-memory fallback.');
+  try {
+    console.warn('[ai-gateway] Using Pages Blob as storage backend.');
+    return createBlobKv();
+  } catch (e: any) {
+    console.warn('[ai-gateway] Blob unavailable, falling back to in-memory:', e?.message || e);
+  }
   return createMemoryKv();
 }
 
